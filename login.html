@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Student Management System</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1>Student Login</h1>
+                <p>Enter your credentials to access your dashboard</p>
+            </div>
+            <form id="loginForm" onsubmit="return false;">
+                <div class="input-group">
+                    <label>Student ID</label>
+                    <input type="text" id="studentId" required placeholder="Enter your Student ID (e.g., S1001)">
+                </div>
+                <div class="input-group">
+                    <label>Date of Birth</label>
+                    <input type="date" id="dob" required>
+                </div>
+                <button type="submit" class="btn">Login →</button>
+            </form>
+            <div id="loginError" style="margin-top: 20px; padding: 10px; background: #fee; border-radius: 5px; color: #c00; display: none;"></div>
+            <div class="auth-footer">
+                Don't have an account? <a href="register.html">Register Now</a><br>
+                <a href="index.html">← Back to Home</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const loginForm = document.getElementById('loginForm');
+        const errorDiv = document.getElementById('loginError');
+        
+        if (loginForm) {
+            loginForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Hide previous error
+                errorDiv.style.display = 'none';
+                
+                const studentId = document.getElementById('studentId').value.trim();
+                const dob = document.getElementById('dob').value;
+                
+                if (!studentId || !dob) {
+                    errorDiv.innerHTML = 'Please enter both Student ID and Date of Birth';
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+                
+                // Show loading state
+                const submitBtn = loginForm.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = 'Logging in...';
+                submitBtn.disabled = true;
+                
+                try {
+                    console.log('Attempting login with:', { studentId, dob });
+                    
+                    const response = await fetch('php/api/login.php', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ studentId, dob })
+                    });
+                    
+                    console.log('Response status:', response.status);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const result = await response.json();
+                    console.log('Login response:', result);
+                    
+                    if (result.success) {
+                        // Save to localStorage
+                        localStorage.setItem('studentId', result.studentId);
+                        localStorage.setItem('studentName', result.name);
+                        
+                        // Redirect to dashboard
+                        window.location.href = 'student-dashboard.html';
+                    } else {
+                        errorDiv.innerHTML = result.message || 'Login failed. Please check your credentials.';
+                        errorDiv.style.display = 'block';
+                    }
+                } catch (error) {
+                    console.error('Login error:', error);
+                    errorDiv.innerHTML = 'Error connecting to server. Please make sure:<br>' +
+                                        '1. XAMPP is running<br>' +
+                                        '2. You are connected to the server<br>' +
+                                        '3. Try again in a moment';
+                    errorDiv.style.display = 'block';
+                } finally {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            });
+        }
+    });
+    </script>
+</body>
+</html>
